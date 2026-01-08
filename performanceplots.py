@@ -16,23 +16,19 @@ def generate_test_sets():
     random.seed(42)
     test_sets = {}
     
-    # Pentru fiecare n de la 4 la 30, generează 3 grafuri diferite
     for n in range(4, 31):
         test_sets[n] = []
         
-        # 1. Graf complet K_n (WORST CASE pentru BF)
         edges_complete = [(i, j) for i in range(n) for j in range(i+1, n)]
         test_sets[n].append(("complete", edges_complete))
-        
-        # 2. Graf FOARTE DENS (90-95%) - extrem de greu pentru BF
+
         edges_very_dense = []
         for i in range(n):
             for j in range(i+1, n):
-                if random.random() < 0.92:  # 92% densitate
+                if random.random() < 0.92:
                     edges_very_dense.append((i, j))
         test_sets[n].append(("very_dense", edges_very_dense))
         
-        # 3. Graf dens (70-80%)
         edges_dense = []
         for i in range(n):
             for j in range(i+1, n):
@@ -50,9 +46,8 @@ def benchmark_bf(test_sets):
     print("WARNING: This will take VERY LONG time for n > 12!")
     print("-" * 60)
     
-    # BF rulează până la limita practică (n=12-13)
-    max_measured_n = 13  # Până unde măsurăm efectiv
-    max_extended_n = 20   # Până unde estimăm
+    max_measured_n = 13
+    max_extended_n = 20 
     
     times_data = []
     ops_data = []
@@ -64,9 +59,7 @@ def benchmark_bf(test_sets):
         
         for graph_type, edges in test_sets[n]:
             try:
-                # Pentru n > 10, testăm doar grafuri mai ușoare
                 if n > 10 and graph_type == "complete":
-                    # Skip K_n complet pentru n > 10 (prea lent)
                     continue
                 
                 adj = read_graph(n, edges)
@@ -78,7 +71,6 @@ def benchmark_bf(test_sets):
                 elapsed = end_time - start_time
                 times.append(elapsed)
                 
-                # Estimare operații
                 estimated_ops = (max(3, n // 2)) ** n
                 
                 if elapsed > 0:
@@ -91,8 +83,7 @@ def benchmark_bf(test_sets):
                 print(f"  n={n}, type={graph_type}: {elapsed:.3f}s, "
                       f"ops/s={ops_per_sec:.2e}")
                 
-                # Stop dacă durează prea mult
-                if elapsed > 120:  # 2 minute maxim per test
+                if elapsed > 120:
                     print(f"    Too slow, stopping measurements at n={n}")
                     max_measured_n = n
                     break
@@ -110,39 +101,33 @@ def benchmark_bf(test_sets):
                 'min_time': min(times),
                 'max_time': max(times),
                 'samples': len(times),
-                'measured': True  # Flag pentru date măsurate
+                'measured': True
             }
             
             times_data.append(statistics.mean(times))
             ops_data.append(statistics.mean(ops_list))
             n_values.append(n)
     
-    # ===== ESTIMARE pentru n > max_measured_n =====
     if len(n_values) >= 3:
         print(f"\nEstimating BF performance for n={max_measured_n+1} to {max_extended_n}...")
         
-        # Fit exponențial pe timpi (log scale)
         times_array = np.array(times_data)
         ops_array = np.array(ops_data)
         n_array = np.array(n_values)
         
-        # Fit pentru timp: time ≈ a * exp(b*n)
         mask = times_array > 0
         if np.sum(mask) >= 3:
             try:
-                # Fit exponențial pe log scale
                 coeffs_time = np.polyfit(n_array[mask], np.log(times_array[mask]), 1)
                 a_time = np.exp(coeffs_time[1])
                 b_time = coeffs_time[0]
                 
-                # Fit pentru ops/s: ops ≈ a * exp(b*n) (descrescător)
                 mask_ops = ops_array > 0
                 if np.sum(mask_ops) >= 3:
                     coeffs_ops = np.polyfit(n_array[mask_ops], np.log(ops_array[mask_ops]), 1)
                     a_ops = np.exp(coeffs_ops[1])
                     b_ops = coeffs_ops[0]
                 
-                # Adaugă estimări pentru n > max_measured_n
                 for n in range(max_measured_n + 1, max_extended_n + 1):
                     estimated_time = a_time * np.exp(b_time * n)
                     estimated_ops = a_ops * np.exp(b_ops * n)
@@ -152,14 +137,13 @@ def benchmark_bf(test_sets):
                         'std_time': 0,
                         'avg_ops': estimated_ops,
                         'std_ops': 0,
-                        'min_time': estimated_time * 0.8,  # +/- 20%
+                        'min_time': estimated_time * 0.8,
                         'max_time': estimated_time * 1.2,
                         'samples': 0,
-                        'measured': False,  # Flag pentru date estimate
+                        'measured': False,
                         'estimation_notes': f'Based on exponential fit from n={min(n_values)}-{max_measured_n}'
                     }
                     
-                    # Conversie la unități mai mari
                     if estimated_time < 60:
                         time_str = f"{estimated_time:.1f}s"
                     elif estimated_time < 3600:
@@ -184,10 +168,8 @@ def plot_all_results(bf_results, greedy_results, greedy_deg_results, dsatur_resu
         import matplotlib.pyplot as plt
         import numpy as np
         
-        # ===== FIGURA 1: Toți algoritmii (ops/s) cu BF extins =====
         plt.figure(figsize=(14, 10))
         
-        # Separa datele măsurate și estimate pentru BF
         bf_n_measured = [n for n in sorted(bf_results.keys()) if bf_results[n].get('measured', True)]
         bf_n_estimated = [n for n in sorted(bf_results.keys()) if not bf_results[n].get('measured', True)]
         
@@ -203,25 +185,21 @@ def plot_all_results(bf_results, greedy_results, greedy_deg_results, dsatur_resu
         dsatur_n = sorted(dsatur_results.keys())
         dsatur_ops = [dsatur_results[n]['avg_ops'] for n in dsatur_n]
         
-        # Plot BF - partea măsurată (solid line)
         if bf_n_measured:
             bf_n_measured_sorted = sorted(bf_n_measured)
             bf_ops_measured = [bf_results[n]['avg_ops'] for n in bf_n_measured_sorted]
             plt.plot(bf_n_measured_sorted, bf_ops_measured, 'r-', linewidth=3, 
                     marker='o', markersize=8, label='Brute-Force (measured)')
         
-        # Plot BF - partea estimată (dashed line)
         if bf_n_estimated:
             bf_n_estimated_sorted = sorted(bf_n_estimated)
             bf_ops_estimated = [bf_results[n]['avg_ops'] for n in bf_n_estimated_sorted]
             plt.plot(bf_n_estimated_sorted, bf_ops_estimated, 'r--', linewidth=2, 
                     alpha=0.7, label='Brute-Force (estimated)')
             
-            # Adaugă marcaj pentru punctele estimate
             for n, ops in zip(bf_n_estimated_sorted, bf_ops_estimated):
                 plt.plot(n, ops, 'rx', markersize=10, markeredgewidth=2)
         
-        # Plot euristici
         plt.plot(greedy_n, greedy_ops, 'b-', linewidth=2, marker='s', 
                  markersize=5, alpha=0.8, label='Greedy de bază')
         plt.plot(greedy_deg_n, greedy_deg_ops, 'g-', linewidth=2, marker='^', 
@@ -239,7 +217,6 @@ def plot_all_results(bf_results, greedy_results, greedy_deg_results, dsatur_resu
         
         plt.axhline(y=1, color='r', linestyle='--', alpha=0.5, linewidth=1)
         
-        # Adaugă text pentru estimare BF
         if bf_n_estimated:
             last_estimated = bf_n_estimated[-1]
             last_ops = bf_ops_estimated[-1]
@@ -253,12 +230,10 @@ def plot_all_results(bf_results, greedy_results, greedy_deg_results, dsatur_resu
         plt.savefig('all_algorithms_extended.png', dpi=300)
         plt.show()
         
-        # ===== FIGURA 8 EXTINSĂ: Timp pe grafuri complete cu BF până la n=20 =====
         print("\nGenerating extended complete graphs comparison (Figura 8)...")
         
         plt.figure(figsize=(12, 8))
         
-        # BF pe complete (măsurat + estimat)
         bf_complete_n_measured = [n for n in bf_n_measured if n <= 13]
         bf_complete_times_measured = [bf_results[n]['avg_time'] for n in bf_complete_n_measured]
         
@@ -268,22 +243,18 @@ def plot_all_results(bf_results, greedy_results, greedy_deg_results, dsatur_resu
         bf_complete_n_all = sorted(bf_complete_n_measured + bf_complete_n_estimated)
         bf_complete_times_all = [bf_results[n]['avg_time'] for n in bf_complete_n_all]
         
-        # Plot BF măsurat
         if bf_complete_n_measured:
             plt.plot(bf_complete_n_measured, bf_complete_times_measured, 'r-', 
                     linewidth=3, marker='o', markersize=8, label='Brute-Force (measured)')
         
-        # Plot BF estimat
         if bf_complete_n_estimated:
             plt.plot(bf_complete_n_estimated, bf_complete_times_estimated, 'r--', 
                     linewidth=2, alpha=0.7, label='Brute-Force (estimated)')
             
-            # Marcaj pentru punctele estimate
             for n, t in zip(bf_complete_n_estimated, bf_complete_times_estimated):
                 plt.plot(n, t, 'rx', markersize=10, markeredgewidth=2)
                 
-                # Adaugă etichete pentru timpi mari
-                if t > 10:  # Peste 10 secunde
+                if t > 10:
                     if t < 60:
                         label = f"{t:.0f}s"
                     elif t < 3600:
@@ -296,7 +267,6 @@ def plot_all_results(bf_results, greedy_results, greedy_deg_results, dsatur_resu
                     plt.annotate(label, xy=(n, t), xytext=(n+0.3, t),
                                 fontsize=9, color='red')
         
-        # Euristici pe complete
         greedy_complete_n = [n for n in greedy_n if n <= 20]
         greedy_complete_times = [greedy_results[n]['avg_time'] for n in greedy_complete_n]
         
@@ -321,12 +291,10 @@ def plot_all_results(bf_results, greedy_results, greedy_deg_results, dsatur_resu
         plt.grid(True, alpha=0.3, linestyle='--')
         plt.legend(fontsize=11, loc='best')
         
-        # Adaugă linii de referință pentru timpi
         plt.axhline(y=1, color='gray', linestyle=':', alpha=0.5, label='1 second')
         plt.axhline(y=60, color='orange', linestyle=':', alpha=0.5, label='1 minute')
         plt.axhline(y=3600, color='red', linestyle=':', alpha=0.5, label='1 hour')
         
-        # Adaugă zona de impracticabilitate
         if bf_complete_n_all:
             impract_n = next((n for n in bf_complete_n_all if bf_results[n]['avg_time'] > 60), None)
             if impract_n:
@@ -343,32 +311,26 @@ def plot_all_results(bf_results, greedy_results, greedy_deg_results, dsatur_resu
         plt.savefig('complete_graphs_extended.png', dpi=300)
         plt.show()
         
-        # ===== FIGURA SPECIALĂ: Doar BF cu estimări =====
         plt.figure(figsize=(12, 8))
         
-        # Pregătește date pentru BF
         bf_n_all_sorted = sorted(bf_n_all)
         bf_times_all = [bf_results[n]['avg_time'] for n in bf_n_all_sorted]
         
-        # Creează două liste separate pentru linii
         measured_idx = [i for i, n in enumerate(bf_n_all_sorted) if bf_results[n].get('measured', True)]
         estimated_idx = [i for i, n in enumerate(bf_n_all_sorted) if not bf_results[n].get('measured', True)]
         
-        # Plot partea măsurată
         if measured_idx:
             measured_n = [bf_n_all_sorted[i] for i in measured_idx]
             measured_times = [bf_times_all[i] for i in measured_idx]
             plt.plot(measured_n, measured_times, 'r-', linewidth=3, 
                     marker='o', markersize=8, label='BF measured')
         
-        # Plot partea estimată
         if estimated_idx:
             estimated_n = [bf_n_all_sorted[i] for i in estimated_idx]
             estimated_times = [bf_times_all[i] for i in estimated_idx]
             plt.plot(estimated_n, estimated_times, 'r--', linewidth=2, 
                     alpha=0.7, label='BF estimated')
             
-            # Adaugă valori pe grafic pentru estimări
             for n, t in zip(estimated_n, estimated_times):
                 if t < 60:
                     label = f"{t:.1f}s"
@@ -390,7 +352,6 @@ def plot_all_results(bf_results, greedy_results, greedy_deg_results, dsatur_resu
         plt.grid(True, alpha=0.3, linestyle='--')
         plt.legend(fontsize=12)
         
-        # Adaugă linii de timp
         time_levels = [(1, '1 second', 'gray'), 
                       (60, '1 minute', 'orange'),
                       (3600, '1 hour', 'red'),
@@ -489,35 +450,27 @@ def plot_all_results(bf_results, greedy_results, greedy_deg_results, dsatur_resu
         dsatur_n = sorted(dsatur_results.keys())
         dsatur_ops = [dsatur_results[n]['avg_ops'] for n in dsatur_n]
         
-        # Plot BF cu linie continuă până la ultimul punct
         plt.plot(bf_n, bf_ops, 'ro-', linewidth=3, markersize=10, label='Brute-Force')
         
-        # Extrapolează tendința BF pentru n=13-15 (linie punctată)
         if len(bf_n) >= 3:
-            # Ajustare curba exponențială pentru BF
             x_bf = np.array(bf_n)
             y_bf = np.array(bf_ops)
             
-            # Log scale pentru fit exponențial
             mask = y_bf > 0
             if np.sum(mask) >= 3:
                 try:
-                    # Fit exponențial: y = a * exp(b*x)
                     coeffs = np.polyfit(x_bf[mask], np.log(y_bf[mask]), 1)
                     a = np.exp(coeffs[1])
                     b = coeffs[0]
                     
-                    # Extinde până la n=15
                     x_extended = np.arange(min(bf_n), 16)
                     y_extended = a * np.exp(b * x_extended)
                     
-                    # Plot extrapolare cu linie punctată
                     plt.plot(x_extended, y_extended, 'r--', alpha=0.5, 
                             linewidth=2, label='BF extrapolation')
                 except:
                     pass
         
-        # Plot euristici
         plt.plot(greedy_n, greedy_ops, 'bo-', linewidth=2, markersize=6, label='Greedy de bază')
         plt.plot(greedy_deg_n, greedy_deg_ops, 'go-', linewidth=2, markersize=6, label='Greedy cu grad')
         plt.plot(dsatur_n, dsatur_ops, 'mo-', linewidth=2, markersize=6, label='DSatur')
@@ -536,10 +489,8 @@ def plot_all_results(bf_results, greedy_results, greedy_deg_results, dsatur_resu
         plt.savefig('all_algorithms_comparison.png', dpi=300)
         plt.show()
         
-        # Figura 2-5 separate (cu BF continuu)
         fig, axes = plt.subplots(2, 2, figsize=(15, 12))
         
-        # BF separat - continuu până la limită
         axes[0, 0].plot(bf_n, bf_ops, 'ro-', linewidth=2, markersize=8)
         axes[0, 0].set_xlabel('n', fontsize=12)
         axes[0, 0].set_ylabel('ops/s', fontsize=12)
@@ -549,7 +500,6 @@ def plot_all_results(bf_results, greedy_results, greedy_deg_results, dsatur_resu
         axes[0, 0].grid(True, alpha=0.3)
         axes[0, 0].axhline(y=1, color='r', linestyle='--', alpha=0.5)
         
-        # Adaugă text explicativ pentru BF
         if bf_n:
             last_n = bf_n[-1]
             last_ops = bf_ops[-1]
@@ -558,7 +508,6 @@ def plot_all_results(bf_results, greedy_results, greedy_deg_results, dsatur_resu
                            transform=axes[0, 0].transAxes,
                            bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8))
         
-        # Greedy de bază
         axes[0, 1].plot(greedy_n, greedy_ops, 'bo-', linewidth=2, markersize=8)
         axes[0, 1].set_xlabel('n', fontsize=12)
         axes[0, 1].set_ylabel('ops/s', fontsize=12)
@@ -567,7 +516,6 @@ def plot_all_results(bf_results, greedy_results, greedy_deg_results, dsatur_resu
         axes[0, 1].set_yscale('log')
         axes[0, 1].grid(True, alpha=0.3)
         
-        # Greedy cu grad
         axes[1, 0].plot(greedy_deg_n, greedy_deg_ops, 'go-', linewidth=2, markersize=8)
         axes[1, 0].set_xlabel('n', fontsize=12)
         axes[1, 0].set_ylabel('ops/s', fontsize=12)
@@ -576,7 +524,6 @@ def plot_all_results(bf_results, greedy_results, greedy_deg_results, dsatur_resu
         axes[1, 0].set_yscale('log')
         axes[1, 0].grid(True, alpha=0.3)
         
-        # DSatur
         axes[1, 1].plot(dsatur_n, dsatur_ops, 'mo-', linewidth=2, markersize=8)
         axes[1, 1].set_xlabel('n', fontsize=12)
         axes[1, 1].set_ylabel('ops/s', fontsize=12)
@@ -589,7 +536,6 @@ def plot_all_results(bf_results, greedy_results, greedy_deg_results, dsatur_resu
         plt.savefig('separate_algorithms.png', dpi=300)
         plt.show()
         
-        # Figura 6: DSatur la scară liniară
         plt.figure(figsize=(10, 6))
         plt.plot(dsatur_n, dsatur_ops, 'mo-', linewidth=2, markersize=8)
         plt.xlabel('n', fontsize=14)
@@ -602,7 +548,6 @@ def plot_all_results(bf_results, greedy_results, greedy_deg_results, dsatur_resu
         plt.savefig('dsatur_linear.png', dpi=300)
         plt.show()
         
-        # Figura 7: Comparație greedy (timp, nu ops/s)
         plt.figure(figsize=(12, 6))
         
         greedy_times = [greedy_results[n]['avg_time'] for n in greedy_n if n <= 20]
@@ -629,62 +574,49 @@ def plot_all_results(bf_results, greedy_results, greedy_deg_results, dsatur_resu
         plt.savefig('greedy_comparison_times.png', dpi=300)
         plt.show()
         
-        # Figura 8: Timp pe grafuri complete pentru toți algoritmii (IMPORTANTĂ!)
         print("\nGenerating complete graphs comparison (Figura 8)...")
         
         plt.figure(figsize=(12, 8))
         
-        # BF pe complete (până la limita practică)
-        bf_complete_n = [n for n in bf_n if n <= 13]  # Până la 13 inclusiv
+        bf_complete_n = [n for n in bf_n if n <= 13] 
         bf_complete_times = []
         for n in bf_complete_n:
             if n in bf_results:
                 bf_complete_times.append(bf_results[n]['avg_time'])
             else:
-                # Dacă nu avem date, estimăm
-                bf_complete_times.append(10 ** (n - 7))  # Estimare exponențială
+                bf_complete_times.append(10 ** (n - 7)) 
         
-        # Greedy pe complete (până la n=20)
         greedy_complete_n = [n for n in greedy_n if n <= 20]
         greedy_complete_times = [greedy_results[n]['avg_time'] for n in greedy_complete_n]
         
-        # Greedy cu grad pe complete
         greedy_deg_complete_n = [n for n in greedy_deg_n if n <= 20]
         greedy_deg_complete_times = [greedy_deg_results[n]['avg_time'] for n in greedy_deg_complete_n]
         
-        # DSatur pe complete
         dsatur_complete_n = [n for n in dsatur_n if n <= 20]
         dsatur_complete_times = [dsatur_results[n]['avg_time'] for n in dsatur_complete_n]
         
-        # Plot BF cu extrapolare (linie continuă + punctată)
         plt.plot(bf_complete_n, bf_complete_times, 'ro-', linewidth=3, 
                 markersize=10, label='Brute-Force (measured)')
         
-        # Extrapolează BF dincolo de măsurători
         if len(bf_complete_n) >= 3:
-            # Fit exponențial pentru BF
             x_bf_complete = np.array(bf_complete_n)
             y_bf_complete = np.array(bf_complete_times)
             
             mask = y_bf_complete > 0
             if np.sum(mask) >= 3:
                 try:
-                    # Fit exponențial pe log scale
                     coeffs = np.polyfit(x_bf_complete[mask], np.log10(y_bf_complete[mask]), 1)
                     a = 10 ** coeffs[1]
                     b = coeffs[0]
                     
-                    # Extinde până la n=20 pentru comparație
                     x_extended = np.arange(min(bf_complete_n), 21)
                     y_extended = a * (10 ** (b * x_extended))
                     
-                    # Plot extrapolare
                     plt.plot(x_extended, y_extended, 'r--', alpha=0.5, 
                             linewidth=2, label='BF (extrapolated)')
                 except:
                     pass
         
-        # Plot euristici
         plt.plot(greedy_complete_n, greedy_complete_times, 'bo-', 
                 linewidth=2, markersize=8, label='Greedy de bază')
         plt.plot(greedy_deg_complete_n, greedy_deg_complete_times, 'go-', 
@@ -700,7 +632,6 @@ def plot_all_results(bf_results, greedy_results, greedy_deg_results, dsatur_resu
         plt.grid(True, alpha=0.3)
         plt.legend()
         
-        # Adaugă anotare pentru punctul unde BF devine impracticabil
         if bf_complete_n:
             last_n = bf_complete_n[-1]
             last_time = bf_complete_times[-1]
