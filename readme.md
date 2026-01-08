@@ -94,7 +94,6 @@ Un ciclu + un nod central conectat la toate nodurile ciclului.
 χ(Wheel(n)) = 4 dacă n este impar
 χ(Wheel(n)) = 3 dacă n este par
 
-yaml
 Copiază codul
 
 ---
@@ -114,7 +113,6 @@ Copiază codul
 - Cel mai mic graf **fără triunghiuri** care necesită 4 culori
 χ(G) = 4
 
-yaml
 Copiază codul
 Link:  
 https://en.wikipedia.org/wiki/Gr%C3%B6tzsch_graph
@@ -126,7 +124,6 @@ https://en.wikipedia.org/wiki/Gr%C3%B6tzsch_graph
 - Primul graf 4-cromatic descoperit de Chvátal
 χ(G) = 4
 
-yaml
 Copiază codul
 Link:  
 https://en.wikipedia.org/wiki/Chv%C3%A1tal_graph
