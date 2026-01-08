@@ -10,7 +10,6 @@ K10 (10 noduri, 45 muchii) ×2
 K11 (11 noduri, 55 muchii) ×2
 
 markdown
-Copiază codul
 
 **Caracteristici:**
 - Grafurile cele mai dense posibile.
@@ -18,7 +17,6 @@ Copiază codul
 χ(G) = 11
 
 markdown
-Copiază codul
 - Necesită 11 culori → extrem de dificil pentru backtracking.
 
 ---
@@ -54,8 +52,6 @@ Grafuri bipartițite complete `K_{n,n}` **minus** un matching perfect.
 **Proprietate importantă:**
 χ(Crown(n)) = ⌈n / 2⌉
 
-yaml
-Copiază codul
 
 → grafuri cu număr cromatic cunoscut, utile pentru validare.
 
@@ -68,7 +64,6 @@ Grafuri circulante cu offset-uri:
 [1,2], [1,3], [2,3], [1,2,3]
 
 markdown
-Copiază codul
 
 - **Test 31–34:** 8 noduri, offset-uri diferite
 - **Test 35–38:** 9 noduri, offset-uri diferite
@@ -94,7 +89,6 @@ Un ciclu + un nod central conectat la toate nodurile ciclului.
 χ(Wheel(n)) = 4 dacă n este impar
 χ(Wheel(n)) = 3 dacă n este par
 
-Copiază codul
 
 ---
 
@@ -113,9 +107,6 @@ Copiază codul
 - Cel mai mic graf **fără triunghiuri** care necesită 4 culori
 χ(G) = 4
 
-Copiază codul
-Link:  
-https://en.wikipedia.org/wiki/Gr%C3%B6tzsch_graph
 
 ---
 
@@ -124,9 +115,6 @@ https://en.wikipedia.org/wiki/Gr%C3%B6tzsch_graph
 - Primul graf 4-cromatic descoperit de Chvátal
 χ(G) = 4
 
-Copiază codul
-Link:  
-https://en.wikipedia.org/wiki/Chv%C3%A1tal_graph
 
 ---
 
@@ -156,8 +144,7 @@ https://en.wikipedia.org/wiki/Chv%C3%A1tal_graph
 - **K11:**  
 11! = 39.916.800
 
-yaml
-Copiază codul
+
 asignări posibile → extrem de dificil pentru backtracking simplu
 
 - **Crown(12):**
